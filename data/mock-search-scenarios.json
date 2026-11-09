@@ -1,0 +1,39 @@
+[
+  {
+    "name": "mocked server-rendered search shows books with optional authors",
+    "query": "mock-success",
+    "status": 200,
+    "books": [
+      {
+        "title": "Mocked Book with Author",
+        "workKey": "/works/OL900001W",
+        "author": "Ada Author"
+      },
+      {
+        "title": "Mocked Book without Author",
+        "workKey": "/works/OL900002W"
+      }
+    ],
+    "emptyMessage": "No matching books or authors",
+    "error": null
+  },
+  {
+    "name": "mocked zero-results document shows the observed empty state",
+    "query": "mock-empty",
+    "status": 200,
+    "books": [],
+    "emptyMessage": "No matching books or authors",
+    "error": null
+  },
+  {
+    "name": "mocked HTTP 500 response displays the returned error document",
+    "query": "mock-error",
+    "status": 500,
+    "books": [],
+    "emptyMessage": "No matching books or authors",
+    "error": {
+      "title": "Service temporarily unavailable",
+      "message": "Please try again later."
+    }
+  }
+]

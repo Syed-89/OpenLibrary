@@ -1,0 +1,30 @@
+{
+  "ui": {
+    "query": "The Hobbit",
+    "minimumResultCount": 5,
+    "resultSampleCount": 5,
+    "apiSampleLimit": 50,
+    "uiComparisonLimit": 20
+  },
+  "api": {
+    "searchScenarios": [
+      {
+        "name": "API search returns titled records and handles optional authors",
+        "query": "The Hobbit",
+        "limit": 5,
+        "minimumFound": 1,
+        "minimumDocs": 1
+      },
+      {
+        "name": "API search returns an empty result for a nonsense query",
+        "query": "zzzxxyy-no-book-match-20261024",
+        "expectedFound": 0,
+        "expectedDocs": 0
+      }
+    ],
+    "pagination": {
+      "query": "The Hobbit",
+      "limit": 10
+    }
+  }
+}

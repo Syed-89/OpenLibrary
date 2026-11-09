@@ -30,3 +30,8 @@ Verify the Open Library search page and API, including search results, paginatio
 6. Expected Outcome
 Search results, API responses, pagination, and navigation work as expected. The UI handles missing data, empty results, and server errors gracefully.
 
+7. Test Data
+Live search queries, limits, and expected result sizes are maintained in
+`data/search-test-data.json`. Mocked response scenarios and their sample book
+records are maintained in `data/mock-search-scenarios.json`. The Playwright
+test scripts load these files to define and validate the test cases.

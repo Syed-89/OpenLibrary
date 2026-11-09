@@ -1,51 +1,65 @@
 import { expect, test } from '@playwright/test';
+import searchTestData from '../data/search-test-data.json';
 import { searchLibrary, SearchResponse } from './helpers/search-api';
 
-test('API search returns titled records and handles optional authors', async ({ request }) => {
-  await test.step('Search the public catalog with an explicit result limit', async () => {
-    const response = await searchLibrary(request, { q: 'The Hobbit', limit: 5 });
-    expect(response.status()).toBe(200);
+interface ApiSearchScenario {
+  name: string;
+  query: string;
+  limit?: number;
+  minimumFound?: number;
+  minimumDocs?: number;
+  expectedFound?: number;
+  expectedDocs?: number;
+}
 
-    const result = (await response.json()) as SearchResponse;
-    expect(typeof result.numFound).toBe('number');
-    expect(result.numFound).toBeGreaterThan(0);
-    expect(result.docs.length).toBeGreaterThan(0);
-    expect(result.docs.length).toBeLessThanOrEqual(5);
+const apiSearchScenarios: ApiSearchScenario[] = searchTestData.api.searchScenarios;
 
-    for (const doc of result.docs.slice(0, 5)) {
-      expect(typeof doc.title).toBe('string');
-      expect(doc.title?.trim()).not.toBe('');
-      if (doc.author_name !== undefined) {
-        expect(Array.isArray(doc.author_name)).toBe(true);
-        for (const author of doc.author_name) {
-          expect(typeof author).toBe('string');
-          expect(author.trim()).not.toBe('');
+for (const scenario of apiSearchScenarios) {
+  test(scenario.name, async ({ request }) => {
+    await test.step('Search the public catalog and validate its response', async () => {
+      const response = await searchLibrary(request, {
+        q: scenario.query,
+        ...(scenario.limit !== undefined ? { limit: scenario.limit } : {}),
+      });
+      expect(response.status()).toBe(200);
+
+      const result = (await response.json()) as SearchResponse;
+      expect(typeof result.numFound).toBe('number');
+      expect(Array.isArray(result.docs)).toBe(true);
+
+      if (scenario.expectedFound !== undefined) {
+        expect(result.numFound).toBe(scenario.expectedFound);
+        expect(result.docs.length).toBe(scenario.expectedDocs);
+      } else {
+        expect(result.numFound).toBeGreaterThanOrEqual(scenario.minimumFound ?? 0);
+        expect(result.docs.length).toBeGreaterThanOrEqual(scenario.minimumDocs ?? 0);
+        if (scenario.limit !== undefined) {
+          expect(result.docs.length).toBeLessThanOrEqual(scenario.limit);
+        }
+
+        for (const doc of result.docs.slice(0, scenario.limit)) {
+          expect(typeof doc.title).toBe('string');
+          expect(doc.title?.trim()).not.toBe('');
+          if (doc.author_name !== undefined) {
+            expect(Array.isArray(doc.author_name)).toBe(true);
+            for (const author of doc.author_name) {
+              expect(typeof author).toBe('string');
+              expect(author.trim()).not.toBe('');
+            }
+          }
         }
       }
-    }
-  });
-});
-
-test('API search returns an empty result for a nonsense query', async ({ request }) => {
-  await test.step('Verify the empty API response shape', async () => {
-    const response = await searchLibrary(request, {
-      q: 'zzzxxyy-no-book-match-20261024',
     });
-    expect(response.status()).toBe(200);
-
-    const result = (await response.json()) as SearchResponse;
-    expect(result.numFound).toBe(0);
-    expect(result.docs).toEqual([]);
   });
-});
+}
 
 test('API pagination respects limits and does not repeat work keys', async ({ request }) => {
-  const limit = 10;
+  const { query, limit } = searchTestData.api.pagination;
 
   await test.step('Fetch two consecutive pages with an explicit limit', async () => {
-    const firstResponse = await searchLibrary(request, { q: 'The Hobbit', limit, offset: 0 });
+    const firstResponse = await searchLibrary(request, { q: query, limit, offset: 0 });
     const secondResponse = await searchLibrary(request, {
-      q: 'The Hobbit',
+      q: query,
       limit,
       offset: limit,
     });

@@ -1,18 +1,20 @@
 import { expect, test } from '@playwright/test';
+import searchTestData from '../data/search-test-data.json';
 import { normalizeTitle, searchLibrary, SearchResponse } from './helpers/search-api';
 import { SearchPage } from './pages/search-page';
 
 test('search results show book details and preserve context after opening a result', async ({
   page,
 }) => {
+  const { query, minimumResultCount, resultSampleCount } = searchTestData.ui;
   const search = new SearchPage(page);
 
-  await test.step('Search for The Hobbit and validate the first five records', async () => {
-    await search.open('The Hobbit');
+  await test.step('Search for the configured title and validate result records', async () => {
+    await search.open(query);
     await expect(search.results.first()).toBeVisible();
-    expect(await search.results.count()).toBeGreaterThanOrEqual(5);
+    expect(await search.results.count()).toBeGreaterThanOrEqual(minimumResultCount);
 
-    for (let index = 0; index < 5; index += 1) {
+    for (let index = 0; index < resultSampleCount; index += 1) {
       const title = (await search.resultTitle(index).innerText()).trim();
       expect(title, `result ${index + 1} should have a title`).not.toBe('');
 
@@ -45,7 +47,7 @@ test('search results show book details and preserve context after opening a resu
     }
 
     await page.goBack({ waitUntil: 'commit', timeout: 15_000 });
-    await expect(page).toHaveURL(/\/search\?q=The(?:\+|%20)Hobbit/);
+    await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe(query);
     await expect(search.resultTitle(0)).toHaveText(firstTitle);
   });
 });
@@ -54,8 +56,10 @@ test('API titles can be matched to visible UI results within a bounded sample', 
   page,
   request,
 }) => {
+  const { query, apiSampleLimit, uiComparisonLimit } = searchTestData.ui;
+
   await test.step('Compare a bounded API sample with the server-rendered UI', async () => {
-    const response = await searchLibrary(request, { q: 'The Hobbit', limit: 50 });
+    const response = await searchLibrary(request, { q: query, limit: apiSampleLimit });
     expect(response.status()).toBe(200);
     const apiResult = (await response.json()) as SearchResponse;
     const apiTitles = apiResult.docs
@@ -64,10 +68,10 @@ test('API titles can be matched to visible UI results within a bounded sample', 
       .map(normalizeTitle);
 
     const search = new SearchPage(page);
-    await search.open('The Hobbit');
+    await search.open(query);
     await expect(search.results.first()).toBeVisible();
     const uiTitles = (await search.results.locator('.booktitle a').allTextContents())
-      .slice(0, 20)
+      .slice(0, uiComparisonLimit)
       .map(normalizeTitle);
 
     expect(apiTitles.length).toBeGreaterThan(0);
