@@ -33,6 +33,8 @@ npm run report
 
 Failed tests retain screenshots and traces to help with debugging.
 
+![alt text](image.png)
+
 ## How the tests work
 
 The test inputs are kept in the root-level `data/` folder. Edit
