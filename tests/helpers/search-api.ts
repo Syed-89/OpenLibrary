@@ -11,6 +11,54 @@ export interface SearchResponse {
   docs: SearchDoc[];
 }
 
+export function validateSearchResponseSchema(value: unknown): string[] {
+  const errors: string[] = [];
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return ['response must be an object'];
+  }
+
+  const response = value as Record<string, unknown>;
+  if (
+    typeof response.numFound !== 'number' ||
+    !Number.isInteger(response.numFound) ||
+    response.numFound < 0
+  ) {
+    errors.push('numFound must be a non-negative integer');
+  }
+  if (!Array.isArray(response.docs)) {
+    errors.push('docs must be an array');
+    return errors;
+  }
+
+  response.docs.forEach((doc: unknown, index: number) => {
+    const path = `docs[${index}]`;
+    if (typeof doc !== 'object' || doc === null || Array.isArray(doc)) {
+      errors.push(`${path} must be an object`);
+      return;
+    }
+
+    const record = doc as Record<string, unknown>;
+    if (typeof record.title !== 'string' || record.title.trim() === '') {
+      errors.push(`${path}.title must be a non-empty string`);
+    }
+    if (record.key !== undefined && typeof record.key !== 'string') {
+      errors.push(`${path}.key must be a string when present`);
+    }
+    if (record.author_name !== undefined) {
+      if (
+        !Array.isArray(record.author_name) ||
+        !record.author_name.every(
+          (author: unknown) => typeof author === 'string' && author.trim() !== '',
+        )
+      ) {
+        errors.push(`${path}.author_name must be an array of non-empty strings when present`);
+      }
+    }
+  });
+
+  return errors;
+}
+
 export interface SearchParams {
   q: string;
   limit?: number;

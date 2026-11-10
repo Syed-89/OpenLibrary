@@ -47,9 +47,10 @@ results. They normalize titles before comparing them because the catalog and
 its relevance ranking can change; the tests don't expect the UI and API to
 return results in exactly the same order.
 
-The API tests check the response shape, titles, optional author names, empty
-searches, and two consecutive pages. Pagination checks that each page respects
-the requested limit and that work keys don't repeat when present.
+The API tests validate the Search API response schema (including required
+fields and optional author names), titles, empty searches, and two consecutive
+pages. Pagination checks that each page respects the requested limit and that
+work keys don't repeat when present.
 
 ## Search page and network mocks
 

@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 import searchTestData from '../data/search-test-data.json';
-import { searchLibrary, SearchResponse } from './helpers/search-api';
+import {
+  searchLibrary,
+  SearchResponse,
+  validateSearchResponseSchema,
+} from './helpers/search-api';
 
 interface ApiSearchScenario {
   name: string;
@@ -13,6 +17,15 @@ interface ApiSearchScenario {
 }
 
 const apiSearchScenarios: ApiSearchScenario[] = searchTestData.api.searchScenarios;
+
+test('Search API response conforms to the expected schema', async ({ request }) => {
+  const { query, limit } = searchTestData.api.pagination;
+  const response = await searchLibrary(request, { q: query, limit });
+  expect(response.status()).toBe(200);
+
+  const result: unknown = await response.json();
+  expect(validateSearchResponseSchema(result)).toEqual([]);
+});
 
 for (const scenario of apiSearchScenarios) {
   test(scenario.name, async ({ request }) => {
